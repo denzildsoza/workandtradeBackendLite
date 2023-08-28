@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import timedelta, date, datetime
 from calendar import day_name
+import pytz
 
 def FilteredSymbolList():
     try:
@@ -39,20 +40,16 @@ def FilteredSymbolList():
                     break
             for i in range(10):
                 expiry_date = expiry_date - timedelta(i)
-                expiry_date_epoch = int(
-                    (
-                        datetime.strptime(
-                            f"{expiry_date} 20:00:00", "%Y-%m-%d %H:%M:%S"
-                        )
-                    ).timestamp()
-                )
+                expiry_datetime = datetime.strptime(f"{expiry_date} 20:00:00", "%Y-%m-%d %H:%M:%S")
+                expiry_datetime_in_india = pytz.timezone('Asia/Kolkata').localize(expiry_datetime)
+                expiry_date_epoch = int(expiry_datetime_in_india.timestamp())
                 allSymbols_temp = allSymbols.loc[
                     allSymbols["expiry_date"] == expiry_date_epoch
                 ]
                 if len(allSymbols_temp) != 0:
                     return allSymbols_temp
-
-        return filterWeeklyexpiry()
+        filteredData = filterWeeklyexpiry()
+        return filteredData
     except Exception as e:
         raise Exception("Could not create filtered symbol list")
 
@@ -67,3 +64,6 @@ def getInTheMoneyContract(filteredSymbolList, level, underLying, direction, bool
     else:
         optionsData = optionsData.loc[optionsData["strike_price"] > int(level)]
     return optionsData["symbol"].tolist()[0]
+
+if __name__ == "__main__":
+    print(FilteredSymbolList())

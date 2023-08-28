@@ -8,19 +8,35 @@ def DeleteOrder(Orders, id):
 
 
 def GetOrders(Orders):
-    Order = []
-    for Order in Orders:
-        Order.pop(
-            {
-                "id": Order["id"],
-                "level": Order["level"],
-                "direction": Order["direction"],
-                "quantity": Order["quantity"],
-                "target": Order["target"],
-                "stoploss": Order["stoploss"],
-                "type": Order["type"],
-                "underlying": Order["underlying"],
-            }
-        )
-        Order = []
-    return Order
+    touchdown = Orders[0]
+    breakout = []
+    for i in Orders[1]:
+        breakout.append(i[1])
+    return touchdown+breakout
+
+
+
+
+
+
+
+
+
+
+
+
+    # for Order in Orders:
+    #     Order.pop(
+    #         {
+    #             "id": Order["id"],
+    #             "level": Order["level"],
+    #             "direction": Order["direction"],
+    #             "quantity": Order["quantity"],
+    #             "target": Order["target"],
+    #             "stoploss": Order["stoploss"],
+    #             "type": Order["type"],
+    #             "underlying": Order["underlying"],
+    #         }
+    #     )
+    #     Order = []
+    # return Order

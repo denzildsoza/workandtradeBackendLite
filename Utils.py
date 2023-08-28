@@ -1,18 +1,18 @@
 import logging
 from constants import LogpathConstants
 from getItm import getInTheMoneyContract
-
+from datetime import datetime, timedelta
 # Logger
 logging.basicConfig(
     filename=LogpathConstants.errorlogspath,
-    level=logging.ERROR,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("request_logger")
 
 
 # Returns the order object
-def createOrderArray(orderBody, filteredList, FyersInstance):
+def createOrderArray(Orders,orderBody, filteredList, FyersInstance):
     id = orderBody["id"]
     level = float(orderBody["level"])
     underlyingSymbol = orderBody["underlying"]
@@ -40,8 +40,9 @@ def createOrderArray(orderBody, filteredList, FyersInstance):
     }
 
     if type == "TouchDown":
-        return orderArrayElement
-
+        Orders[0].append(orderArrayElement)
+        return Orders
+    orderArrayElement["isCrossed"] = False
     breakoutArrayElement = [orderArrayElement]
 
     placeorderLevel = (
@@ -58,7 +59,7 @@ def createOrderArray(orderBody, filteredList, FyersInstance):
         "target": target,
         "stoploss": stoploss,
     }
-    return breakoutArrayElement.append(orderplaceElement)
+    return Orders[1].append(breakoutArrayElement.append(orderplaceElement),tradeSymbol)
 
 
 # Returns the data for the place order api
@@ -80,15 +81,11 @@ def CreateOrderData(symbol, quantity):
 
 
 def createHistoricalData(symbol, FyersInstance):
-    today = datetime.now(your_timezone).date()
-
-    # Set the target times
-    time_9am = today.replace(hour=9, minute=0, second=0, microsecond=0)
-    time_3_30pm = today.replace(hour=15, minute=30, second=0, microsecond=0)
-
+    today = datetime.today()
+    tomorrow = today + timedelta(days=1)
     # Calculate epoch timestamps
-    _from = int(time_9am.timestamp())
-    to = int(time_3_30pm.timestamp())
+    _from = int(today.timestamp())
+    to = int(tomorrow.timestamp())
     data = {
         "symbol": symbol,
         "resolution": "15",
@@ -103,6 +100,7 @@ def createHistoricalData(symbol, FyersInstance):
 
 def getPreviousSwingSupport(symbol, FyersInstance):
     data = createHistoricalData(symbol, FyersInstance)
+    data = [sub_array[4] for sub_array in data]
     previousSwing = None
     for i in range(1, len(data) - 1):
         if data[i][1] > data[i - 1][1] and data[i][1] > data[i + 1][1]:
@@ -112,6 +110,7 @@ def getPreviousSwingSupport(symbol, FyersInstance):
 
 def getPreviousSwingResistance(symbol, FyersInstance):
     data = createHistoricalData(symbol, FyersInstance)
+    data = [sub_array[4] for sub_array in data]
     previousSwing = None
     for i in range(1, len(data) - 1):
         if data[i][1] < data[i - 1][1] and data[i][1] < data[i + 1][1]:
@@ -140,23 +139,23 @@ your_timezone = pytz.timezone("Asia/Kolkata")
 # Get today's date
 
 
-def createHistoricalData(symbol, FyersInstance):
-    today = datetime.now(your_timezone).date()
+# def createHistoricalData(symbol, FyersInstance):
+#     today = datetime.now(your_timezone).date()
 
-    # Set the target times
-    time_9am = today.replace(hour=9, minute=0, second=0, microsecond=0)
-    time_3_30pm = today.replace(hour=15, minute=30, second=0, microsecond=0)
+#     # Set the target times
+#     time_9am = today.replace(hour=9, minute=0, second=0, microsecond=0)
+#     time_3_30pm = today.replace(hour=15, minute=30, second=0, microsecond=0)
 
-    # Calculate epoch timestamps
-    _from = int(time_9am.timestamp())
-    to = int(time_3_30pm.timestamp())
-    data = {
-        "symbol": symbol,
-        "resolution": "15",
-        "date_format": "0",
-        "range_from": _from,
-        "range_to": to,
-        "cont_flag": "1",
-    }
-    response = FyersInstance.history(data=data)
-    return response["candles"]
+#     # Calculate epoch timestamps
+#     _from = int(time_9am.timestamp())
+#     to = int(time_3_30pm.timestamp())
+#     data = {
+#         "symbol": symbol,
+#         "resolution": "15",
+#         "date_format": "0",
+#         "range_from": _from,
+#         "range_to": to,
+#         "cont_flag": "1",
+#     }
+#     response = FyersInstance.history(data=data)
+#     return response["candles"]
