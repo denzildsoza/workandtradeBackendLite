@@ -9,9 +9,7 @@ def DeleteOrder(Orders, id):
 
 def GetOrders(Orders):
     touchdown = Orders[0]
-    breakout = []
-    for i in Orders[1]:
-        breakout.append(i[1])
+    breakout =Orders[1]
     return touchdown+breakout
 
 

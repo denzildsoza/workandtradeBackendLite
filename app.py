@@ -1,38 +1,106 @@
 from flask import Flask, jsonify, request
 from threading import Thread
-from FyersInstance import generateFyersInstance
+from fyers_apiv3 import fyersModel
 from Utils import logger, createOrderArray
 from getItm import FilteredSymbolList
 from OrderArrayServices import DeleteOrder,GetOrders
-from constants import workandtradeconfig,CredentialsConstants
-
+from fyers_apiv3.FyersWebsocket import data_ws
+from constants import CredentialsConstants,LogpathConstants,workandtradeconfig
+import copy
 # create instance of flask
 app = Flask(__name__)
 
 # Initializations
+accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTMyMzg4MzIsImV4cCI6MTY5MzI2OTAxMiwibmJmIjoxNjkzMjM4ODMyLCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazdNWXdvOU5UbDlra1R0S1BzZDdIdTJaS1JTSlNXRVRfcDRHWXJrcmtrd3dtXzNac1l2WkFLcG1RWUpDd1liQ0hRTWxfQy05S2szQ2NNM2hzTnI0YlNpZXU5NWVFRnpfa2tJRXpqaWRzX3ZWYTNpVT0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.a6n-CDNMuULq6SBZch47sxmx1QulkR4rBA0il1NHZcY"
 Orders = [[],[]]
-FyersInstance , FyersWebsocketInstance = generateFyersInstance('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTMxOTY1NTMsImV4cCI6MTY5MzI2OTAzMywibmJmIjoxNjkzMTk2NTUzLCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazdDRUpsa1hpSEZtVERMVVRlMktDWkpWeXFMQWJfbUZmOWR4bHVoZ09DYXlDcUVXU1ZUNkNVLVlxV1ROTDFEMkR2N2dXNkREbWZOaTZTQzlQTXRCaE5JQy1TSnJnMGFJR2ZKYUpZY1V2a0FTVG0xRT0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.ufBFeHJRtgtrtz4O2JGehf2xnN_5u5N0IDvs9WEdH3A')
 filteredList = FilteredSymbolList()
 
-#handle on message callback
+
+FyersInstance = fyersModel.FyersModel(
+            client_id=CredentialsConstants.clientId, token=accessToken, log_path=LogpathConstants.fyerslogpath
+        )
+
 def onmessage(data):
     global Orders
-    arrayFiltered = [order for order in Orders[0] if order["underlyingSymbol"] == data["symbol"]]
-    for order in arrayFiltered:
+    orders = GetOrders(Orders)
+    touchdown = [order for order in orders if order["underlyingSymbol"] == data["symbol"]]
+    breakout = [order for order in orders if order["tradeSymbol"] == data["symbol"]]
+    for order in touchdown:
         if data["ltp"] >= order["limits"][1] and data["ltp"] <= order["limits"][0]:
-            Orders.remove(order)
-            logger.info("Order  placed successfully.")
-            print("orderPlaced")
+            if(order['type']=='TouchDown'):
+                print(data["ltp"],order["limits"][0],order["limits"][1])
+                print("orderPlaced")
+                Orders.remove(order)
+            else:
+                order['isCrossed'] = True
 
-#Interceptor for authentication
-# @app.before_request
-def before_request_func():
-    if request.path.startswith('/createsession') :
-        stateRes = request.args.get('state')
-        if stateRes == CredentialsConstants.state:
-            return request 
         else:
-            return jsonify({'message':'not authenticated'}),404
+            if order['type']=='Breakout':
+                order['isCrossed'] = False
+                
+
+    for order in breakout:
+        if data['ltp'] >= order['contractLevel'] and order['isCrossed']==True:
+            print("Order Placed")
+            Orders.remove(order)
+
+def onerror(message):
+    """
+    Callback function to handle WebSocket errors.
+
+    Parameters:
+        message (dict): The error message received from the WebSocket.
+
+
+    """
+    print("Error:", message)
+
+
+def onclose(message):
+    """
+    Callback function to handle WebSocket connection close events.
+    """
+    print("Connection closed:", message)
+
+
+def onopen():
+    """
+    Callback function to subscribe to data type and symbols upon WebSocket connection.
+
+    """
+    # Specify the data type and symbols you want to subscribe to
+    data_type = "SymbolUpdate"
+
+    # Subscribe to the specified symbols and data type
+    symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
+    fyers.subscribe(symbols=symbols, data_type=data_type)
+
+    # Keep the socket running to receive real-time data
+    fyers.keep_running()
+
+wsAccessToken = f"{CredentialsConstants.clientId}:{accessToken}"
+# Replace the sample access token with your actual access token obtained from Fyers
+
+# Create a FyersDataSocket instance with the provided parameters
+fyers = data_ws.FyersDataSocket(
+    access_token=wsAccessToken,       # Access token in the format "appid:accesstoken"
+    log_path="",                     # Path to save logs. Leave empty to auto-create logs in the current directory.
+    litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
+    write_to_file=False,              # Save response in a log file instead of printing it.
+    reconnect=True,                  # Enable auto-reconnection to WebSocket on disconnection.
+    on_connect=onopen,               # Callback function to subscribe to data upon connection.
+    on_close=onclose,                # Callback function to handle WebSocket connection close events.
+    on_error=onerror,                # Callback function to handle WebSocket errors.
+    on_message=onmessage             # Callback function to handle incoming messages from the WebSocket.
+)
+
+# Establish a connection to the Fyers WebSocket
+fyers.connect()
+
+
+# Interceptor for authentication
+@app.before_request
+def before_request_func():
     authTocken = request.headers.get('Authorization')
     if authTocken != CredentialsConstants.auth :
         return jsonify({'message':'not authenticated'}),404
@@ -40,18 +108,33 @@ def before_request_func():
 
 # Define the api end points
 # Create fyers object
-@app.route(workandtradeconfig.newSession)
-def createFyersObject():
-    global FyersInstance, FyersWebsocketInstance
-    try:
-        FyersInstance, FyersWebsocketInstance = generateFyersInstance(
-            request.args.get("auth_code")
-        )
-        FyersWebsocketInstance.On_message=onmessage
-        return jsonify({"message": "Success created a session"}), 200
-    except Exception as error:
-        logger.log(error, "We have a %s", "mysterious problem", exc_info=1)
-        return jsonify({"message": "Error occured while authenticating"}), 404
+# @app.route(workandtradeconfig.newSession)
+# def createFyersObject():
+#     print("started")
+#     global FyersInstance, fyerswstoken
+#     try:
+#         FyersInstance, fyerswstoken = generateFyersInstance(
+#             # req
+#             # uest.args.get("auth_code"),
+#         )
+#         print(FyersInstance)
+#         fyers = data_ws.FyersDataSocket(
+#             access_token=fyerswstoken,  # Access token in the format "appid:accesstoken"
+#             log_path=LogpathConstants.fyerslogpath,  # Path to save logs. Leave empty to auto-create logs in the current directory.
+#             litemode=True,  # Lite mode disabled. Set to True if you want a lite response.
+#             write_to_file=False,  # Save response in a log file instead of printing it.
+#             reconnect=True,  # Enable auto-reconnection to WebSocket on disconnection.
+#             # on_connect=onopen,  # Callback function to subscribe to data upon connection.
+#             # on_close=onclose,  # Callback function to handle WebSocket connection close events.
+#             # on_error=onerror,  # Callback function to handle WebSocket errors.
+#             on_message=onmessage,  # Callback function to handle incoming messages from the WebSocket.
+#         )
+#         fyers.connect()
+#         return jsonify({"message": "Success created a session"}), 200
+#     except Exception as error:
+#         logger.log(error, "We have a %s", "mysterious problem", exc_info=1)
+#         print(error)
+#         return jsonify({"message": "Error occured while authenticating"}), 404
 
 
 # API endpoint to get all orders
@@ -59,8 +142,8 @@ def createFyersObject():
 def getOrders():
     global Orders
     try:
-        Orders = GetOrders(Orders)
-        return jsonify(Orders), 200
+        orders = GetOrders(Orders)
+        return jsonify(orders), 200
     except:
         return jsonify({"message": "Error occured while fetching orders"}), 404
 
@@ -70,12 +153,11 @@ def getOrders():
 def PlaceOrders():
     global Orders
     orderBody = request.json
+    orders = copy.deepcopy(Orders)
     try:
-        orderBody,tradeSymbol = createOrderArray(Orders,orderBody, filteredList,FyersInstance)
+        Orders,tradeSymbol = createOrderArray(orders,orderBody, filteredList,FyersInstance)
         if(tradeSymbol):
-            FyersWebsocketInstance.subscribe(symbols=[tradeSymbol], data_type='SymbolUpdate')
-        Orders = Orders
-        print(Orders)
+            fyers.subscribe(symbols=[tradeSymbol], data_type='SymbolUpdate')
         return jsonify({'message':'Successfully placed the Order'}),200
     except Exception as error:
         print(error)

@@ -12,7 +12,7 @@ logger = logging.getLogger("request_logger")
 
 
 # Returns the order object
-def createOrderArray(Orders,orderBody, filteredList, FyersInstance):
+def createOrderArray(orders,orderBody, filteredList, FyersInstance):
     id = orderBody["id"]
     level = float(orderBody["level"])
     underlyingSymbol = orderBody["underlying"]
@@ -37,30 +37,22 @@ def createOrderArray(Orders,orderBody, filteredList, FyersInstance):
         "tradeSymbol": tradeSymbol,
         "target": target,
         "stoploss": stoploss,
+        "type":type,
     }
-
+    
     if type == "TouchDown":
-        Orders[0].append(orderArrayElement)
-        return Orders
+        orders[0].append(orderArrayElement)
+        return orders,tradeSymbol
     orderArrayElement["isCrossed"] = False
-    breakoutArrayElement = [orderArrayElement]
 
     placeorderLevel = (
         getPreviousSwingResistance(tradeSymbol, FyersInstance)
         if bool
         else getPreviousSwingSupport(tradeSymbol, FyersInstance)
     )
-
-    orderplaceElement = {
-        "id": id,
-        "limits": placeorderLevel,
-        "underlyingSymbol": underlyingSymbol,
-        "tradeSymbol": tradeSymbol,
-        "target": target,
-        "stoploss": stoploss,
-    }
-    return Orders[1].append(breakoutArrayElement.append(orderplaceElement),tradeSymbol)
-
+    orderArrayElement['contractLevel'] = placeorderLevel
+    orders[1].append(orderArrayElement)
+    return orders,tradeSymbol
 
 # Returns the data for the place order api
 def CreateOrderData(symbol, quantity):
@@ -103,8 +95,8 @@ def getPreviousSwingSupport(symbol, FyersInstance):
     data = [sub_array[4] for sub_array in data]
     previousSwing = None
     for i in range(1, len(data) - 1):
-        if data[i][1] > data[i - 1][1] and data[i][1] > data[i + 1][1]:
-            previousSwing = (i, data[i][1], "peak")
+        if data[i] < data[i - 1] and data[i] < data[i + 1]:
+            previousSwing = data[i]
     return previousSwing
 
 
@@ -112,9 +104,10 @@ def getPreviousSwingResistance(symbol, FyersInstance):
     data = createHistoricalData(symbol, FyersInstance)
     data = [sub_array[4] for sub_array in data]
     previousSwing = None
+
     for i in range(1, len(data) - 1):
-        if data[i][1] < data[i - 1][1] and data[i][1] < data[i + 1][1]:
-            previousSwing = (i, data[i][1], "trough")
+        if data[i] > data[i - 1] and data[i] > data[i + 1]:
+            previousSwing = data[i]
     return previousSwing
 
 
@@ -159,3 +152,4 @@ your_timezone = pytz.timezone("Asia/Kolkata")
 #     }
 #     response = FyersInstance.history(data=data)
 #     return response["candles"]
+    

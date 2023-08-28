@@ -35,32 +35,6 @@ class LogpathConstants:
 #api Constants
 class ApiConstants:
     IndexSymbolsList = ['NSE:NIFTY50-INDEX','NSE:NIFTYBANK-INDEX']
+    # IndexSymbolsList = ["MCX:GOLDM23SEPFUT"]
     orderTypes = ["TouchDown","BreakOut"]
 
-
-
-# Orders = {
-#     "id": "",
-#     "quantity": "",
-#     "level": [0.0000518*100+1],
-#     "underLyingSymbol": "",
-#     "Target":1,
-#     "stopLoss":1
-# }
-
-# data = {"id": ""}
-
-
-
-# orderDetails = {
-#     "id": "",
-#     "level": "",
-#     "direction": "",
-#     "target": "",
-#     "stoploss": "",
-#     "type": "",
-# }
-
-'''msg[0]['ltp']'''
-
-("https://public.fyers.in/sym_details/NSE_FO.csv")
