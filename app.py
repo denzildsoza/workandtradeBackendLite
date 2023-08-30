@@ -5,14 +5,14 @@ from Utils import logger, createOrderArray
 from getItm import FilteredSymbolList
 from OrderArrayServices import DeleteOrder,GetOrders
 from fyers_apiv3.FyersWebsocket import data_ws
-from constants import CredentialsConstants,LogpathConstants,workandtradeconfig
+from constants import CredentialsConstants,LogpathConstants,workandtradeconfig,ApiConstants
 import copy
 # create instance of flask
 app = Flask(__name__)
 
 # Initializations
-accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTMyMzg4MzIsImV4cCI6MTY5MzI2OTAxMiwibmJmIjoxNjkzMjM4ODMyLCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazdNWXdvOU5UbDlra1R0S1BzZDdIdTJaS1JTSlNXRVRfcDRHWXJrcmtrd3dtXzNac1l2WkFLcG1RWUpDd1liQ0hRTWxfQy05S2szQ2NNM2hzTnI0YlNpZXU5NWVFRnpfa2tJRXpqaWRzX3ZWYTNpVT0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.a6n-CDNMuULq6SBZch47sxmx1QulkR4rBA0il1NHZcY"
-Orders = [[],[]]
+accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTMzNjgwMTksImV4cCI6MTY5MzQ0MTgxOSwibmJmIjoxNjkzMzY4MDE5LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazdyN1RtRFVZUURtdi0xdzA5Z0d2N2RYbkNzZ3lqSnp5U2dBNmg5VG9td3JIWmRBbjhzTGxnbnpBUi1tdDllaWN3em44MmQ4U21fM1FlQUNrMXkxSVBzQ083YUhzdWZuZmM2M0lDOEdtVm14SGRqdz0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.qnfq2Bh2L4o19-cn-HLp44Iwl-WpNEEosCrvgrLJPKQ"
+Orders = []
 filteredList = FilteredSymbolList()
 
 
@@ -22,15 +22,15 @@ FyersInstance = fyersModel.FyersModel(
 
 def onmessage(data):
     global Orders
-    orders = GetOrders(Orders)
-    touchdown = [order for order in orders if order["underlyingSymbol"] == data["symbol"]]
-    breakout = [order for order in orders if order["tradeSymbol"] == data["symbol"]]
+    touchdown = [order for order in Orders if order["underlyingSymbol"] == data["symbol"]]
+    breakout = [order for order in Orders if order["tradeSymbol"] == data["symbol"]]
     for order in touchdown:
         if data["ltp"] >= order["limits"][1] and data["ltp"] <= order["limits"][0]:
             if(order['type']=='TouchDown'):
-                print(data["ltp"],order["limits"][0],order["limits"][1])
+                Orders=DeleteOrder(Orders,order['id'])
+                logger.info(order)
+                logger.info(data["ltp"])
                 print("orderPlaced")
-                Orders.remove(order)
             else:
                 order['isCrossed'] = True
 
@@ -40,9 +40,11 @@ def onmessage(data):
                 
 
     for order in breakout:
-        if data['ltp'] >= order['contractLevel'] and order['isCrossed']==True:
+        if order['isCrossed']==True and data['ltp'] >= order['contractLevel']:
+            Orders=DeleteOrder(Orders,order['id'])
+            logger.info(data["ltp"])
             print("Order Placed")
-            Orders.remove(order)
+            logger.info(order) 
 
 def onerror(message):
     """
@@ -72,7 +74,7 @@ def onopen():
     data_type = "SymbolUpdate"
 
     # Subscribe to the specified symbols and data type
-    symbols = ['NSE:SBIN-EQ', 'NSE:ADANIENT-EQ']
+    symbols = ApiConstants.IndexSymbolsList
     fyers.subscribe(symbols=symbols, data_type=data_type)
 
     # Keep the socket running to receive real-time data
@@ -142,8 +144,7 @@ def before_request_func():
 def getOrders():
     global Orders
     try:
-        orders = GetOrders(Orders)
-        return jsonify(orders), 200
+        return jsonify(Orders), 200
     except:
         return jsonify({"message": "Error occured while fetching orders"}), 404
 
@@ -161,7 +162,7 @@ def PlaceOrders():
         return jsonify({'message':'Successfully placed the Order'}),200
     except Exception as error:
         print(error)
-        return jsonify({"message": "Error occured while Placing order"}), 404
+        return jsonify({"message": error}), 404
 
 
 # API endpoint to delete a order

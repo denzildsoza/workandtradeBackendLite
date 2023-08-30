@@ -2,22 +2,19 @@ import logging
 from constants import LogpathConstants
 from getItm import getInTheMoneyContract
 from datetime import datetime, timedelta
+
 # Logger
-logging.basicConfig(
-    filename=LogpathConstants.errorlogspath,
-    level=logging.DEBUG,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO,filename=LogpathConstants.errorlogspath,)
 logger = logging.getLogger("request_logger")
 
 
 # Returns the order object
-def createOrderArray(orders,orderBody, filteredList, FyersInstance):
+def createOrderArray(orders, orderBody, filteredList, FyersInstance):
     id = orderBody["id"]
     level = float(orderBody["level"])
     underlyingSymbol = orderBody["underlying"]
-    target = float(orderBody["target"])
-    stoploss = float(orderBody["stoploss"])
+    target = float(orderBody["target"]) + level
+    stoploss = float(orderBody["stoploss"]) + level
     direction = orderBody["direction"]
     limit = round(0.0000518 * level, 2)
     bool = True if direction == "Resistance" else False
@@ -37,22 +34,19 @@ def createOrderArray(orders,orderBody, filteredList, FyersInstance):
         "tradeSymbol": tradeSymbol,
         "target": target,
         "stoploss": stoploss,
-        "type":type,
+        "type": type,
     }
-    
+
     if type == "TouchDown":
-        orders[0].append(orderArrayElement)
-        return orders,tradeSymbol
+        orders.append(orderArrayElement)
+        return orders, None
     orderArrayElement["isCrossed"] = False
 
-    placeorderLevel = (
-        getPreviousSwingResistance(tradeSymbol, FyersInstance)
-        if bool
-        else getPreviousSwingSupport(tradeSymbol, FyersInstance)
-    )
-    orderArrayElement['contractLevel'] = placeorderLevel
-    orders[1].append(orderArrayElement)
-    return orders,tradeSymbol
+    placeorderLevel = getPreviousSwing(tradeSymbol, FyersInstance)
+    orderArrayElement["contractLevel"] = placeorderLevel
+    orders.append(orderArrayElement)
+    return orders, tradeSymbol
+
 
 # Returns the data for the place order api
 def CreateOrderData(symbol, quantity):
@@ -74,39 +68,40 @@ def CreateOrderData(symbol, quantity):
 
 def createHistoricalData(symbol, FyersInstance):
     today = datetime.today()
-    tomorrow = today + timedelta(days=1)
-    # Calculate epoch timestamps
-    _from = int(today.timestamp())
-    to = int(tomorrow.timestamp())
+    fromDate = today.strftime("%Y-%m-%d")
+    yesterday = datetime.today() + timedelta(days=1)
+    toDate = yesterday.strftime("%Y-%m-%d")
     data = {
         "symbol": symbol,
-        "resolution": "15",
-        "date_format": "0",
-        "range_from": _from,
-        "range_to": to,
+        "resolution": "3",
+        "date_format": "1",
+        "range_from": fromDate,
+        "range_to": toDate,
         "cont_flag": "1",
     }
     response = FyersInstance.history(data=data)
     return response["candles"]
 
 
-def getPreviousSwingSupport(symbol, FyersInstance):
+def getPreviousSwing(symbol, FyersInstance):
     data = createHistoricalData(symbol, FyersInstance)
     data = [sub_array[4] for sub_array in data]
-    previousSwing = None
-    for i in range(1, len(data) - 1):
-        if data[i] < data[i - 1] and data[i] < data[i + 1]:
-            previousSwing = data[i]
-    return previousSwing
-
-
-def getPreviousSwingResistance(symbol, FyersInstance):
-    data = createHistoricalData(symbol, FyersInstance)
-    data = [sub_array[4] for sub_array in data]
-    previousSwing = None
-
     for i in range(1, len(data) - 1):
         if data[i] > data[i - 1] and data[i] > data[i + 1]:
+            last_swing = data[i]
+        elif data[i] < data[i - 1] and data[i] < data[i + 1]:
+            last_swing = data[i]
+
+    return last_swing
+
+
+def getPreviousLowerSwing(symbol, FyersInstance):
+    data = createHistoricalData(symbol, FyersInstance)
+    data = [sub_array[4] for sub_array in data]
+    previousSwing = None
+    n = len(data)
+    for i in range(1, n - 1):
+        if data[i] < data[i - 1] and data[i] < data[i + 1]:
             previousSwing = data[i]
     return previousSwing
 
@@ -152,4 +147,3 @@ your_timezone = pytz.timezone("Asia/Kolkata")
 #     }
 #     response = FyersInstance.history(data=data)
 #     return response["candles"]
-    
