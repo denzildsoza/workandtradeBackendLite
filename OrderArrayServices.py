@@ -9,19 +9,24 @@ def DeleteOrder(Orders, id):
 
 def GetOrders(Orders):
     touchdown = Orders[0]
-    breakout =Orders[1]
-    return touchdown+breakout
+    breakout = Orders[1]
+    return touchdown + breakout
 
 
-
-
-
-
-
-
-
-
-
+# Returns the data for the place order api
+def CreateOrderData(symbol, quantity):
+    return {
+        "symbol": symbol,
+        "qty": quantity,
+        "type": 2,
+        "side": 1,
+        "productType": "MARGIN",
+        "limitPrice": 0,
+        "stopPrice": 0,
+        "validity": "DAY",
+        "disclosedQty": 0,
+        "offlineOrder": False,
+    }
 
     # for Order in Orders:
     #     Order.pop(

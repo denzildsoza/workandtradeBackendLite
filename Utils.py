@@ -12,9 +12,10 @@ logger = logging.getLogger("request_logger")
 def createOrderArray(orders, orderBody, filteredList, FyersInstance):
     id = orderBody["id"]
     level = float(orderBody["level"])
+    quantity = int(orderBody["quantity"])
     underlyingSymbol = orderBody["underlying"]
     target = float(orderBody["target"]) + level
-    stoploss = float(orderBody["stoploss"]) + level
+    stoploss =level- float(orderBody["stoploss"])  
     direction = orderBody["direction"]
     limit = round(0.0000518 * level, 2)
     bool = True if direction == "Resistance" else False
@@ -30,6 +31,7 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
     orderArrayElement = {
         "id": id,
         "limits": [limit + level, abs(level - limit)],
+        "quantity":quantity,
         "underlyingSymbol": underlyingSymbol,
         "tradeSymbol": tradeSymbol,
         "target": target,
@@ -48,22 +50,6 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
     return orders, tradeSymbol
 
 
-# Returns the data for the place order api
-def CreateOrderData(symbol, quantity):
-    return {
-        "symbol": symbol,
-        "qty": quantity,
-        "type": 2,
-        "side": 1,
-        "productType": "MARGIN",
-        "limitPrice": 0,
-        "stopPrice": 0,
-        "validity": "DAY",
-        "disclosedQty": 0,
-        "offlineOrder": "False",
-        "stopLoss": 0,
-        "takeProfit": 0,
-    }
 
 
 def createHistoricalData(symbol, FyersInstance):
