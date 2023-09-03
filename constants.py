@@ -10,7 +10,7 @@ class workandtradeconfig:
     newSession="/newSession"
     getOrders="/orders"
     placeOrder="/placeorder"
-    deleteOrder="/orders/<orderId>"
+    deleteOrder="/deleteorder/<orderId>"
     getTypes="/getordertypes"
     getSymbols="/getsymbols"
   

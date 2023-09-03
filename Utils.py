@@ -14,20 +14,32 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
     level = float(orderBody["level"])
     quantity = int(orderBody["quantity"])
     underlyingSymbol = orderBody["underlying"]
-    target = float(orderBody["target"]) + level
-    stoploss =level- float(orderBody["stoploss"])  
     direction = orderBody["direction"]
     limit = round(0.0000518 * level, 2)
-    bool = True if direction == "Resistance" else False
     type = orderBody["type"]
-    tradeSymbol = getInTheMoneyContract(
-        filteredList,
-        level,
-        "NIFTY" if underlyingSymbol == "NSE:NIFTY50-INDEX" else "BANKNIFTY",
-        "PE" if direction == "Resistance" else "CE",
-        bool,
-    )
+    if direction == "Resistance":
+        target =level - float(orderBody["target"]) 
+        stoploss =level+ float(orderBody["stoploss"])
+        tradeSymbol = getInTheMoneyContract(
+            filteredList,
+            level,
+            "NIFTY" if underlyingSymbol == "NSE:NIFTY50-INDEX" else "BANKNIFTY",
+            "PE",
+            True,
+        )
+        placeorderLevel = getSwingLow(tradeSymbol,FyersInstance) if type == "BreakOut" else None
 
+    if direction == "Support":
+        target = float(orderBody["target"]) + level
+        stoploss =level- float(orderBody["stoploss"])
+        tradeSymbol = getInTheMoneyContract(
+            filteredList,
+            level,
+            "NIFTY" if underlyingSymbol == "NSE:NIFTY50-INDEX" else "BANKNIFTY",
+            "CE",
+            False,
+        )
+        placeorderLevel = getSwingLow(tradeSymbol,FyersInstance) if type == "BreakOut" else None
     orderArrayElement = {
         "id": id,
         "limits": [limit + level, abs(level - limit)],
@@ -41,10 +53,9 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
 
     if type == "TouchDown":
         orders.append(orderArrayElement)
-        return orders, None
+        return orders, placeorderLevel
     orderArrayElement["isCrossed"] = False
 
-    placeorderLevel = getPreviousSwing(tradeSymbol, FyersInstance)
     orderArrayElement["contractLevel"] = placeorderLevel
     orders.append(orderArrayElement)
     return orders, tradeSymbol
@@ -59,7 +70,7 @@ def createHistoricalData(symbol, FyersInstance):
     toDate = yesterday.strftime("%Y-%m-%d")
     data = {
         "symbol": symbol,
-        "resolution": "3",
+        "resolution": "15",
         "date_format": "1",
         "range_from": fromDate,
         "range_to": toDate,
@@ -69,28 +80,38 @@ def createHistoricalData(symbol, FyersInstance):
     return response["candles"]
 
 
-def getPreviousSwing(symbol, FyersInstance):
-    data = createHistoricalData(symbol, FyersInstance)
-    data = [sub_array[4] for sub_array in data]
-    for i in range(1, len(data) - 1):
-        if data[i] > data[i - 1] and data[i] > data[i + 1]:
-            last_swing = data[i]
-        elif data[i] < data[i - 1] and data[i] < data[i + 1]:
-            last_swing = data[i]
+def getSwingHigh(symbol,FyersInstance):
+    data = createHistoricalData(symbol,FyersInstance)
+    open =  [sub_array[1] for sub_array in data]
+    close = [sub_array[4] for sub_array in data]
+    swingHigh = []
+    for i in  range(0, len(open) - 1):
+        if close[i] > open[i+1]:
+            swingHigh.append(close[i])
+        else:
+            swingHigh.append(open[i+1])
+    highSwing = None
+    for i in range(1, len(swingHigh) - 1):
+        if swingHigh[i] > swingHigh[i - 1] and swingHigh[i] > swingHigh[i + 1]:
+            highSwing = swingHigh[i]
+    return highSwing  
 
-    return last_swing
 
-
-def getPreviousLowerSwing(symbol, FyersInstance):
-    data = createHistoricalData(symbol, FyersInstance)
-    data = [sub_array[4] for sub_array in data]
-    previousSwing = None
-    n = len(data)
-    for i in range(1, n - 1):
-        if data[i] < data[i - 1] and data[i] < data[i + 1]:
-            previousSwing = data[i]
-    return previousSwing
-
+def getSwingLow(symbol,FyersInstance):
+    data = createHistoricalData(symbol,FyersInstance)
+    open =  [sub_array[1] for sub_array in data]
+    close = [sub_array[4] for sub_array in data]
+    swingLow = []
+    for i in  range(0, len(open) - 1):
+        if close[i] < open[i+1]:
+            swingLow.append(close[i])
+        else:
+            swingLow.append(open[i+1])
+    lowSwing = None
+    for i in range(1, len(swingLow) - 1):
+        if swingLow[i] < swingLow[i - 1] and swingLow[i] < swingLow[i + 1]:
+            lowSwing = swingLow[i]
+    return lowSwing
 
 def onOpen():
     pass

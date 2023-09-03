@@ -17,7 +17,7 @@ import copy
 app = Flask(__name__)
 
 # Initializations
-accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTM0NTMzMTQsImV4cCI6MTY5MzUyODI1NCwibmJmIjoxNjkzNDUzMzE0LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazhBd0Nqb1VNN3hUbS1jN0J4aU9MbVdCQjFfUHk3T2tFd3pVb1Nqem4wZkx3TVlocl8zeWpKcVBDTDBocGFCamdxZGFSeGpRQXZPNmUtMlJCVWNKbG5SV3VPY2ZBRnoySkg2aFlubEVTS2Mxd1lYZz0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.BCk-zdsCTOY34VieUX5BU1N-ZVpEuu3CgGwyINcQu7w"
+accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTM3NDA1NjMsImV4cCI6MTY5Mzc4NzQyMywibmJmIjoxNjkzNzQwNTYzLCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazlHNFQ4d19oMmRRSzI2d0ZXdXJhYTdCbFQzdkRYSzVwaDN1SkN4eW9EcURFd19hNE9wVlZsc1Q3eHpMNTRVUzBNcUJ6TFprTkVqaVBPaXFnb1hWQmlHUzFLcF9ZcFNpVVpKRUFNYzdscWJUMmtHST0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.hK-wuYf1M4VZ0A8Mq7TOvtUzqGwEoVeRVwufKc5qi7w"
 Orders = []
 filteredList = FilteredSymbolList()
 
@@ -38,26 +38,30 @@ def placeOrder(order):
     id = response["id"]
     tartget = order["target"]
     stoploss = order["stoploss"]
-    Orders.append({"id": id, "limits": [stoploss, tartget], "type": "exit"})
+    underlyingSymbol = order["underlyingSymbol"]
+    Orders.append({"id": id, "limits": [stoploss, tartget],"underlyingSymbol":underlyingSymbol, "type": "exit"})
 
 
 def exitpositionByid(order):
     data = {"id": order["id"]}
-    # FyersInstance.exit_positions(data=data)
-    logger.log(f"possitions exite ${order}")
+    FyersInstance.exit_positions(data=data)
+    logger.log(f"possitions exited ${order}")
 
 def onmessage(data):
-    print(data)
     global Orders
-    touchdown = [
-        order for order in Orders if order["underlyingSymbol"] == data["symbol"]
-    ]
-    breakout = [order for order in Orders if order["tradeSymbol"] == data["symbol"]]
+    touchdown = []
+    breakout = []
+    for order in Orders:
+        if order["underlyingSymbol"] == data["symbol"]:
+            touchdown.append(order)
+        if order["tradeSymbol"] == data["symbol"]:
+            breakout.append(order)
     for order in touchdown:
         if data["ltp"] >= order["limits"][1] and data["ltp"] <= order["limits"][0]:
 
             if order["type"] == "Breakout":
                 order["isCrossed"] = True
+                continue
             if order["type"] == "TouchDown":
                 try:
                     Orders = DeleteOrder(Orders, order["id"])
@@ -65,6 +69,7 @@ def onmessage(data):
                     logger.info(e)
                 else:
                     Thread(target=placeOrder, args=(order,)).start()
+                continue
             else:
                 try:
                     Orders = DeleteOrder(Orders, order["id"])
@@ -76,10 +81,12 @@ def onmessage(data):
 
     for order in breakout:
         if order["isCrossed"] == True and data["ltp"] >= order["contractLevel"]:
-            Orders = DeleteOrder(Orders, order["id"])
-            logger.info(data["ltp"])
-            print("Order Placed")
-            logger.info(order)
+            try:
+                Orders = DeleteOrder(Orders, order["id"])
+            except Exception as e:
+                logger.info(e)
+            else:
+                Thread(target=placeOrder, args=(order,)).start()
 
 
 def onerror(message):
@@ -205,7 +212,7 @@ def PlaceOrders():
 
 
 # API endpoint to delete a order
-@app.route(workandtradeconfig.deleteOrder, methods=["DELETE"])
+@app.route("/deleteorder/<orderId>", methods=["GET"])
 def deleteOrders(orderId):
     global Orders
     try:
