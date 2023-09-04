@@ -19,7 +19,7 @@ def CreateOrderData(symbol, quantity):
         "symbol": symbol,
         "qty": quantity,
         "type": 2,
-        "side": -1,
+        "side": 1,
         "productType": "MARGIN",
         "limitPrice": 0,
         "stopPrice": 0,
