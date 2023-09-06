@@ -27,7 +27,7 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
             "PE",
             True,
         )
-        placeorderLevel = getSwingLow(tradeSymbol,FyersInstance) if type == "Breakout" else None
+        placeorderLevel = getSwingHigh(tradeSymbol,FyersInstance) if type == "Breakout" else None
 
     if direction == "Support":
         target = float(orderBody["target"]) + level
