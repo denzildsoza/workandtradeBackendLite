@@ -17,7 +17,7 @@ import copy
 app = Flask(__name__)
 
 # Initializations
-accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTM5NzAwNDgsImV4cCI6MTY5NDA0NjYwOCwibmJmIjoxNjkzOTcwMDQ4LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCazktNkEzRGpBTUhPdlFlU04zZlMzZXI3ak8tdmkwNWkybVZRWFBwUUZzRVE2a1p0ZVdUVFdGZlBrRUxNaTRwWVhvNG9tbEtDX0JiY3JoN2FtUmhscU5WMmhiVVp5MFFobHdlMU82d0JKcll5VmltOD0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.NiOYPDJma2NmX8x4yJY5r1Ll-IBGU_IEmh99LWYF42M"
+accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTQwNjAxNDgsImV4cCI6MTY5NDEzMzA0OCwibmJmIjoxNjk0MDYwMTQ4LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCay1VNTBiWWpCSzVCaGJYdHYzZlpwTVlsN2VKTFhsVm5acml2a3dVRXdwME1mN0ZMdlRnazFQMlphM1NKektkVmtmZVF6QzNDQkVnZ0JCODNxdnRWZnB1MUNFV0ItS3B3eWF3Q0tzdzR2cmhJN204dz0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.dMJT6YwAjoE3TloBmX1hYqTGiaERf_FfJS2uy_diz84"
 Orders = []
 filteredList = FilteredSymbolList()
 print(filteredList)
@@ -30,7 +30,6 @@ FyersInstance = fyersModel.FyersModel(
 
 
 def placeOrder(order):
-    print(order)
     global Orders
     data = CreateOrderData(quantity=order["quantity"], symbol=order["tradeSymbol"])
     response = FyersInstance.place_order(data=data)
@@ -48,6 +47,7 @@ def exitpositionByid(order):
     logger.log(f"possitions exited ${order}")
 
 def onmessage(data):
+    print(data)
     global Orders
     touchdown = []
     breakout = []
