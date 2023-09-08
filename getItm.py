@@ -87,7 +87,7 @@ def getInTheMoneyContract(filteredSymbolList, level, underLying, direction, bool
         optionsData = optionsData.loc[optionsData["strike_price"] < int(level)]
     else:
         optionsData = optionsData.loc[optionsData["strike_price"] > int(level)]
-    return optionsData["symbol"].tolist()[0]
+    return optionsData["symbol"].tolist()[1]
 
 if __name__ == "__main__":
     print(FilteredSymbolList())
