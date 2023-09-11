@@ -22,7 +22,7 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
         stoploss =level+ float(orderBody["stoploss"])
         tradeSymbol = getInTheMoneyContract(
             filteredList,
-            level,
+            target,
             "NIFTY" if underlyingSymbol == "NSE:NIFTY50-INDEX" else "BANKNIFTY",
             "PE",
             True,
@@ -34,7 +34,7 @@ def createOrderArray(orders, orderBody, filteredList, FyersInstance):
         stoploss =level- float(orderBody["stoploss"])
         tradeSymbol = getInTheMoneyContract(
             filteredList,
-            level,
+            target,
             "NIFTY" if underlyingSymbol == "NSE:NIFTY50-INDEX" else "BANKNIFTY",
             "CE",
             False,
