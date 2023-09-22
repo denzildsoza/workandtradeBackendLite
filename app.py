@@ -17,7 +17,7 @@ import copy
 app = Flask(__name__)
 
 # Initializations
-accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTUyNjk5ODYsImV4cCI6MTY5NTM0MjY0NiwibmJmIjoxNjk1MjY5OTg2LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbEM4UmlYcm1ESE1LLU1sYmYwREx6T051MFpDMTNUMXRDeGVxc0FxTnRzTnh6RXpSTW9mWk5VbmxybFIxLXFfMHNFWWp2RTFSVkxhVXBVNWVvZy1KbEVZcFdwOHp0ZGp5LXNfUHN0V25RU0M5QkhaST0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9._51iVuWyq-x0J9x709T_-BYdWLvmHTebU4v3miPyyNE"
+accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE2OTUzNTYwOTUsImV4cCI6MTY5NTQyOTA1NSwibmJmIjoxNjk1MzU2MDk1LCJhdWQiOlsieDowIiwieDoxIiwieDoyIiwiZDoxIiwiZDoyIiwieDoxIiwieDowIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbERSU19PVGcyTE56RXZRZFgxMVlmeEZjSGwyRUtoRzlSQjNfQ0VfM2hjXzBqV2UxM2p5aXU0WFc0ZW0tQkxZc0FMdjcxOEZiTWIzWVRzYmI5T3oySzRfS3FuanFpQ2tJcjViUUhBcHc4OXZ4TUlKaz0iLCJkaXNwbGF5X25hbWUiOiJERU5aSUwgRFNPVVpBIiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJmeV9pZCI6IlhEMDg2ODUiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.v68mc1Ib2FFzqZNbWyO0Ot7OeiBOD793vpk9iVBH7iQ"
 Orders = []
 filteredList = FilteredSymbolList()
 print(filteredList)
@@ -154,33 +154,16 @@ def before_request_func():
 
 # Define the api end points
 # Create fyers object
-# @app.route(workandtradeconfig.newSession)
-# def createFyersObject():
-#     print("started")
-#     global FyersInstance, fyerswstoken
-#     try:
-#         FyersInstance, fyerswstoken = generateFyersInstance(
-#             # req
-#             # uest.args.get("auth_code"),
-#         )
-#         print(FyersInstance)
-#         fyers = data_ws.FyersDataSocket(
-#             access_token=fyerswstoken,  # Access token in the format "appid:accesstoken"
-#             log_path=LogpathConstants.fyerslogpath,  # Path to save logs. Leave empty to auto-create logs in the current directory.
-#             litemode=True,  # Lite mode disabled. Set to True if you want a lite response.
-#             write_to_file=False,  # Save response in a log file instead of printing it.
-#             reconnect=True,  # Enable auto-reconnection to WebSocket on disconnection.
-#             # on_connect=onopen,  # Callback function to subscribe to data upon connection.
-#             # on_close=onclose,  # Callback function to handle WebSocket connection close events.
-#             # on_error=onerror,  # Callback function to handle WebSocket errors.
-#             on_message=onmessage,  # Callback function to handle incoming messages from the WebSocket.
-#         )
-#         fyers.connect()
-#         return jsonify({"message": "Success created a session"}), 200
-#     except Exception as error:
-#         logger.log(error, "We have a %s", "mysterious problem", exc_info=1)
-#         print(error)
-#         return jsonify({"message": "Error occured while authenticating"}), 404
+@app.route(workandtradeconfig.newSession)
+def createFyersObject():
+    try:
+        global FyersInstance, fyerswstoken
+#       
+        return jsonify({"message": "Success created a session"}), 200
+    except Exception as error:
+        logger.log(error, "We have a %s", "mysterious problem", exc_info=1)
+        print(error)
+        return jsonify({"message": "Error occured while authenticating"}), 404
 
 
 # API endpoint to get all orders
