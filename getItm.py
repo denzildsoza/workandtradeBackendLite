@@ -4,8 +4,15 @@ from calendar import day_name
 import pytz
 
 def FilteredSymbolList():
+    while True:
+        try:
+            allSymbols = pd.read_csv("https://public.fyers.in/sym_details/NSE_FO.csv")
+        except:
+            continue
+        else:
+            break
     try:
-        allSymbols = pd.read_csv("https://public.fyers.in/sym_details/NSE_FO.csv")
+        
         allSymbols.columns = [
             "epoch_time",
             "symbol_name",
@@ -73,7 +80,7 @@ def FilteredSymbolList():
         result = pd.concat(frames)
         return result
     except Exception as e:
-        raise Exception("Could not create filtered symbol list")
+        raise Exception("Could not create filtered symbol list",e)
 
 
 def getInTheMoneyContract(filteredSymbolList, level, underLying, direction, bool):
