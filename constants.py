@@ -19,12 +19,12 @@ class workandtradeconfig:
 class CredentialsConstants:
     clientId = '3H021OQ8ZI-100'
     redirectUrl = f"{workandtradeconfig.baseUrl}${workandtradeconfig.newSession}"
-    secretKey = "PPEJLUL3HA"
+    secretKey = "..."
     SymbolUpdate = "SymbolUpdate"
     code = "code"
-    state = "KJSDIUSEKJSRKJBIUGDJSBISESHIHSDGIS"
+    state = "..."
     grantType = "authorization_code"
-    auth = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkubG9naW4uZnllcnMuaW4iLCJpYXQiOjE2OTMxNjIzOTgsImV4cCI6MTY5MzE5MjM5OCwibmJmIjoxNjkzMTYxNzk4LCJhdWQiOiJbXCJ4OjBcIiwgXCJ4OjFcIiwgXCJ4OjJcIiwgXCJkOjFcIiwgXCJkOjJcIiwgXCJ4OjFcIiwgXCJ4OjBcIl0iLCJzdWIiOiJhdXRoX2NvZGUiLCJkaXNwbGF5X25hbWUiOiJYRDA4Njg1Iiwib21zIjoiSzEiLCJoc21fa2V5IjoiYjVkOTdlYTE1YmY5MWRhMzUxOTJmODUzZTNiNWQ2YTEwMGQyYzc2OTEwMTk3MjIyZWVlZjY5ZjIiLCJub25jZSI6IiIsImFwcF9pZCI6IjNIMDIxT1E4WkkiLCJ1dWlkIjoiMGI3YWFjYTAyNzViNGVjNDk2NzlkMThjZTk4ZTRiYWIiLCJpcEFkZHIiOiIwLjAuMC4wIiwic2NvcGUiOiIifQ.8KHWBlvvC8JcNvsKPWjKFqhtwELmvqSLMddSM48cxkw"
+    auth = "..."
 
 #LogPaths
 class LogpathConstants:
